@@ -4,7 +4,7 @@
   <groupId>com.eidd</groupId>
   <artifactId>classflow-client-lourd</artifactId>
   <name>ClassFlow Client Lourd</name>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.1.0</version>
   <description>Application desktop pour ClassFlow</description>
   <build>
     <plugins>
@@ -13,6 +13,15 @@
         <version>3.11.0</version>
         <configuration>
           <release>21</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.2</version>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
         </configuration>
       </plugin>
       <plugin>
@@ -33,11 +42,23 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <finalName>classflow-client-lourd-${project.version}</finalName>
               <transformers>
                 <transformer>
-                  <mainClass>com.eidd.clientlourd.ClassFlowClientApplication</mainClass>
+                  <mainClass>com.eidd.clientlourd.Main</mainClass>
                 </transformer>
+                <transformer />
               </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>
@@ -67,6 +88,50 @@
         </exclusion>
         <exclusion>
           <artifactId>junit-jupiter-engine</artifactId>
+          <groupId>org.junit.jupiter</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>3.24.2</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>byte-buddy</artifactId>
+          <groupId>net.bytebuddy</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>5.7.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>byte-buddy-agent</artifactId>
+          <groupId>net.bytebuddy</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>objenesis</artifactId>
+          <groupId>org.objenesis</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>byte-buddy</artifactId>
+          <groupId>net.bytebuddy</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>5.7.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>junit-jupiter-api</artifactId>
           <groupId>org.junit.jupiter</groupId>
         </exclusion>
       </exclusions>

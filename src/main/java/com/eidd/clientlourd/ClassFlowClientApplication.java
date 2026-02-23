@@ -2,7 +2,7 @@ package com.eidd.clientlourd;
 
 import com.eidd.clientlourd.dto.ClassRoomDTO;
 import com.eidd.clientlourd.service.ClassFlowApiService;
-import com.eidd.clientlourd.view.ClassRoomDetailView;
+import com.eidd.clientlourd.view.ClassRoomContainerView;
 import com.eidd.clientlourd.view.LoginView;
 import com.eidd.clientlourd.view.MainView;
 import javafx.application.Application;
@@ -48,13 +48,13 @@ public class ClassFlowClientApplication extends Application {
     }
 
     private void showClassRoomDetail(ClassRoomDTO classRoom) {
-        ClassRoomDetailView detailView = new ClassRoomDetailView(apiService, classRoom);
-        detailView.setOnBack(this::showMainView);
-        Scene detailScene = new Scene(detailView, 1000, 600);
+        ClassRoomContainerView containerView = new ClassRoomContainerView(apiService, classRoom);
+        containerView.setOnBack(this::showMainView);
+        Scene detailScene = new Scene(containerView, 1200, 700);
         
         primaryStage.setScene(detailScene);
-        primaryStage.setWidth(1000);
-        primaryStage.setHeight(600);
+        primaryStage.setWidth(1200);
+        primaryStage.setHeight(700);
     }
 
     public static void main(String[] args) {

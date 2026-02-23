@@ -1,5 +1,8 @@
-package com.eidd.clientlourd.model;
+package com.eidd.clientlourd.clientmodel;
 
+/**
+ * Modèle client pour une table (non lié aux entités Core)
+ */
 public class Table {
     private long id;
     private int x;

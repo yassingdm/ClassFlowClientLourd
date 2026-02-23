@@ -254,4 +254,242 @@ public class ClassFlowApiService {
             throw new IOException("Failed to delete remarque: " + response.statusCode());
         }
     }
+
+    /**
+     * Crée une nouvelle table dans une classe
+     */
+    public TableDTO createTable(long classRoomId, TableCreateRequest tableRequest) throws IOException, InterruptedException {
+        String json = objectMapper.writeValueAsString(tableRequest);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/tables"))
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200 || response.statusCode() == 201) {
+            return objectMapper.readValue(response.body(), TableDTO.class);
+        } else {
+            throw new IOException("Failed to create table: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Supprime une table d'une classe
+     */
+    public void deleteTable(long classRoomId, int tableIndex) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/tables/" + tableIndex))
+                .header("Authorization", authHeader)
+                .DELETE()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200 && response.statusCode() != 204) {
+            throw new IOException("Failed to delete table: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Crée des groupes aléatoires dans une classe
+     */
+    public List<GroupeDTO> createGroupesAleatoires(long classRoomId, int groupCount) throws IOException, InterruptedException {
+        GroupeRandomCreateRequest request = new GroupeRandomCreateRequest(groupCount);
+        String json = objectMapper.writeValueAsString(request);
+
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/groupes/aleatoire"))
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200 || response.statusCode() == 201) {
+            TypeFactory typeFactory = objectMapper.getTypeFactory();
+            return objectMapper.readValue(response.body(), 
+                    typeFactory.constructCollectionType(List.class, GroupeDTO.class));
+        } else {
+            throw new IOException("Failed to create random groups: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Crée des groupes manuellement dans une classe
+     */
+    public List<GroupeDTO> createGroupes(long classRoomId, List<List<Long>> groupes, List<String> noms) throws IOException, InterruptedException {
+        GroupeCreateRequest request = new GroupeCreateRequest();
+        request.setGroupes(groupes);
+        request.setNoms(noms);
+        String json = objectMapper.writeValueAsString(request);
+
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/groupes"))
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200 || response.statusCode() == 201) {
+            TypeFactory typeFactory = objectMapper.getTypeFactory();
+            return objectMapper.readValue(response.body(), 
+                    typeFactory.constructCollectionType(List.class, GroupeDTO.class));
+        } else {
+            throw new IOException("Failed to create groups: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Récupère tous les groupes d'une classe
+     */
+    public List<GroupeDTO> getGroupes(long classRoomId) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/groupes"))
+                .header("Authorization", authHeader)
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            TypeFactory typeFactory = objectMapper.getTypeFactory();
+            return objectMapper.readValue(response.body(), 
+                    typeFactory.constructCollectionType(List.class, GroupeDTO.class));
+        } else {
+            throw new IOException("Failed to fetch groups: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Met à jour un groupe
+     */
+    public GroupeDTO updateGroupe(long classRoomId, long groupeId, List<Long> addEleveIds, List<Long> removeEleveIds, String nom) throws IOException, InterruptedException {
+        GroupeUpdateRequest request = new GroupeUpdateRequest();
+        request.setAddEleveIds(addEleveIds);
+        request.setRemoveEleveIds(removeEleveIds);
+        request.setNom(nom);
+        String json = objectMapper.writeValueAsString(request);
+
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/groupes/" + groupeId))
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(), GroupeDTO.class);
+        } else {
+            throw new IOException("Failed to update group: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Supprime un groupe
+     */
+    public void deleteGroupe(long classRoomId, long groupeId) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/groupes/" + groupeId))
+                .header("Authorization", authHeader)
+                .DELETE()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200 && response.statusCode() != 204) {
+            throw new IOException("Failed to delete group: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Récupère le plan de classe avec les élèves assignés aux tables
+     */
+    public ClassRoomPlanDTO getClassRoomPlan(long id) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + id + "/plan"))
+                .header("Authorization", authHeader)
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(), ClassRoomPlanDTO.class);
+        } else {
+            throw new IOException("Failed to fetch classroom plan: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Met à jour la position d'une table
+     */
+    public TableDTO updateTablePosition(long classRoomId, int tableIndex, int x, int y) throws IOException, InterruptedException {
+        TablePositionUpdateRequest request = new TablePositionUpdateRequest(x, y);
+        String json = objectMapper.writeValueAsString(request);
+
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/tables/" + tableIndex + "/position"))
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(), TableDTO.class);
+        } else {
+            throw new IOException("Failed to update table position: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Assigne un élève à une table
+     */
+    public EleveDTO assignEleveToTable(long classRoomId, long eleveId, int tableIndex) throws IOException, InterruptedException {
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/eleves/" + eleveId + "/table/" + tableIndex))
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString("{}"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(), EleveDTO.class);
+        } else {
+            throw new IOException("Failed to assign eleve to table: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Échange deux élèves de place
+     */
+    public void swapEleves(long classRoomId, long eleveId1, long eleveId2) throws IOException, InterruptedException {
+        EleveSwapRequest request = new EleveSwapRequest(eleveId1, eleveId2);
+        String json = objectMapper.writeValueAsString(request);
+
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/classrooms/" + classRoomId + "/eleves/swap"))
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new IOException("Failed to swap eleves: " + response.statusCode());
+        }
+    }
 }
