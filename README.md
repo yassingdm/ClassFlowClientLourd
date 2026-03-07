@@ -6,7 +6,7 @@ Application de bureau JavaFX pour la gestion de classes, d'élèves et de remarq
 
 - Java 21 ou supérieur
 - Maven 3.6+
-- Le backend ClassFlow doit être démarré sur `http://localhost:8080`
+- Le backend ClassFlow doit être démarré sur `http://localhost:8080` ou sur Render
 
 ## Lancer le backend
 
