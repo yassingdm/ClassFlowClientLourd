@@ -6,7 +6,10 @@ import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -130,7 +133,7 @@ public class ClassRoomPlanView extends BorderPane {
             }
         }
 
-        statusLabel.setText("Cliquez sur 2 élèves pour les échanger. Faites glisser les tables pour les déplacer.");
+        statusLabel.setText("Cliquez sur 2 élèves ou 2 tables occupées pour les échanger. Faites glisser les tables pour les déplacer.");
     }
 
     private void drawGrid() {
@@ -159,7 +162,26 @@ public class ClassRoomPlanView extends BorderPane {
         rect.setArcWidth(10);
         rect.setArcHeight(10);
 
-        tablePane.getChildren().add(rect);
+        VBox tableContent = new VBox(2);
+        tableContent.setAlignment(Pos.CENTER);
+        tableContent.setMaxWidth(CELL_SIZE - 18);
+
+        if (tablePlan.getEleve() != null) {
+            Text eleveNameText = new Text(tablePlan.getEleve().getPrenom() + "\n" + tablePlan.getEleve().getNom());
+            eleveNameText.setFont(Font.font("Arial", FontWeight.BOLD, 9));
+            eleveNameText.setFill(Color.WHITE);
+            eleveNameText.setTextAlignment(TextAlignment.CENTER);
+            eleveNameText.setWrappingWidth(CELL_SIZE - 20);
+            tableContent.getChildren().add(eleveNameText);
+        } else {
+            Text emptyText = new Text("Table libre");
+            emptyText.setFont(Font.font("Arial", FontWeight.NORMAL, 9));
+            emptyText.setFill(Color.web("#E0E0E0"));
+            emptyText.setTextAlignment(TextAlignment.CENTER);
+            tableContent.getChildren().add(emptyText);
+        }
+
+        tablePane.getChildren().addAll(rect, tableContent);
         tablePane.setCursor(Cursor.HAND);
 
         // Drag and drop de la table
@@ -199,8 +221,8 @@ public class ClassRoomPlanView extends BorderPane {
                 if (tablePlan.getEleve() != null) {
                     StackPane eleveView = eleveViews.get(tablePlan.getEleve().getId());
                     if (eleveView != null) {
-                        eleveView.setLayoutX(gridX * CELL_SIZE + 10);
-                        eleveView.setLayoutY(gridY * CELL_SIZE + 10);
+                        eleveView.setLayoutX(gridX * CELL_SIZE + CELL_SIZE - 24);
+                        eleveView.setLayoutY(gridY * CELL_SIZE + 4);
                     }
                 }
             }
@@ -211,8 +233,45 @@ public class ClassRoomPlanView extends BorderPane {
                 // Sauvegarder la nouvelle position
                 int gridX = (int) ((tablePane.getLayoutX() - 5) / CELL_SIZE);
                 int gridY = (int) ((tablePane.getLayoutY() - 5) / CELL_SIZE);
-                updateTablePosition(tableIndex, gridX, gridY);
+                
+                // Vérifier si une autre table occupe déjà cette position
+                if (isPositionOccupied(gridX, gridY, tableIndex)) {
+                    showError("Une table existe déjà à cette position (X:" + gridX + ", Y:" + gridY + ")");
+                    // Restaurer la position originale
+                    refreshClassRoom();
+                } else {
+                    updateTablePosition(tableIndex, gridX, gridY);
+                }
             }
+        });
+
+        tablePane.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY && tablePlan.getEleve() != null) {
+                handleEleveSelectionForSwap(tablePlan.getEleve(), tablePane);
+            }
+        });
+
+        tablePane.setOnDragOver(event -> {
+            if (event.getGestureSource() != tablePane && event.getDragboard().hasString()) {
+                event.acceptTransferModes(TransferMode.MOVE);
+            }
+            event.consume();
+        });
+
+        tablePane.setOnDragDropped(event -> {
+            Dragboard dragboard = event.getDragboard();
+            boolean success = false;
+            if (dragboard.hasString()) {
+                try {
+                    long eleveId = Long.parseLong(dragboard.getString());
+                    assignEleveToTable(eleveId, tableIndex);
+                    success = true;
+                } catch (NumberFormatException ignored) {
+                    success = false;
+                }
+            }
+            event.setDropCompleted(success);
+            event.consume();
         });
 
         // Menu contextuel
@@ -228,62 +287,90 @@ public class ClassRoomPlanView extends BorderPane {
     private StackPane createEleveView(EleveDTO eleve, int x, int y) {
         StackPane elevePane = new StackPane();
 
-        elevePane.setLayoutX(x * CELL_SIZE + 10);
-        elevePane.setLayoutY(y * CELL_SIZE + 10);
+        elevePane.setLayoutX(x * CELL_SIZE + CELL_SIZE - 24);
+        elevePane.setLayoutY(y * CELL_SIZE + 4);
 
-        VBox content = new VBox(2);
-        content.setAlignment(Pos.CENTER);
-        content.setMaxWidth(CELL_SIZE - 20);
-
-        Text nameText = new Text(eleve.getPrenom() + "\n" + eleve.getNom());
-        nameText.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-        nameText.setFill(Color.WHITE);
-        nameText.setTextAlignment(TextAlignment.CENTER);
-        nameText.setWrappingWidth(CELL_SIZE - 25);
-
-        content.getChildren().add(nameText);
-
-        Rectangle bg = new Rectangle(CELL_SIZE - 20, CELL_SIZE - 20);
+        Rectangle bg = new Rectangle(20, 20);
         bg.setFill(Color.web("#4CAF50"));
         bg.setStroke(Color.web("#388E3C"));
         bg.setStrokeWidth(2);
-        bg.setArcWidth(8);
-        bg.setArcHeight(8);
+        bg.setArcWidth(20);
+        bg.setArcHeight(20);
 
-        elevePane.getChildren().addAll(bg, content);
+        Text actionText = new Text("↕");
+        actionText.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+        actionText.setFill(Color.WHITE);
+
+        elevePane.getChildren().addAll(bg, actionText);
         elevePane.setCursor(Cursor.HAND);
+
+        elevePane.setOnDragDetected(event -> {
+            Dragboard dragboard = elevePane.startDragAndDrop(TransferMode.MOVE);
+            ClipboardContent clipboardContent = new ClipboardContent();
+            clipboardContent.putString(String.valueOf(eleve.getId()));
+            dragboard.setContent(clipboardContent);
+            event.consume();
+        });
 
         // Clic pour échanger deux élèves
         elevePane.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                if (selectedEleve1 == null) {
-                    selectedEleve1 = eleve;
-                    selectedEleveView1 = elevePane;
-                    bg.setStroke(Color.YELLOW);
-                    bg.setStrokeWidth(3);
-                    statusLabel.setText("Sélectionnez un deuxième élève pour échanger");
-                } else if (selectedEleve1.getId() == eleve.getId()) {
-                    // Désélectionner
-                    bg.setStroke(Color.web("#388E3C"));
-                    bg.setStrokeWidth(2);
-                    selectedEleve1 = null;
-                    selectedEleveView1 = null;
-                    statusLabel.setText("Cliquez sur 2 élèves pour les échanger");
-                } else {
-                    // Échanger les deux élèves
-                    swapEleves(selectedEleve1.getId(), eleve.getId());
-
-                    // Réinitialiser la sélection
-                    Rectangle bg1 = (Rectangle) selectedEleveView1.getChildren().get(0);
-                    bg1.setStroke(Color.web("#388E3C"));
-                    bg1.setStrokeWidth(2);
-                    selectedEleve1 = null;
-                    selectedEleveView1 = null;
-                }
+                handleEleveSelectionForSwap(eleve, elevePane);
             }
         });
 
         return elevePane;
+    }
+
+    private void handleEleveSelectionForSwap(EleveDTO eleve, StackPane sourcePane) {
+        Rectangle sourceBg = (Rectangle) sourcePane.getChildren().get(0);
+
+        if (selectedEleve1 == null) {
+            selectedEleve1 = eleve;
+            selectedEleveView1 = sourcePane;
+            sourceBg.setStroke(Color.YELLOW);
+            sourceBg.setStrokeWidth(3);
+            statusLabel.setText("Sélectionnez un deuxième élève pour échanger");
+            return;
+        }
+
+        if (selectedEleve1.getId() == eleve.getId()) {
+            resetSelectionStyle(sourcePane);
+            selectedEleve1 = null;
+            selectedEleveView1 = null;
+            statusLabel.setText("Cliquez sur 2 élèves ou 2 tables occupées pour les échanger");
+            return;
+        }
+
+        swapEleves(selectedEleve1.getId(), eleve.getId());
+
+        resetSelectionStyle(selectedEleveView1);
+        selectedEleve1 = null;
+        selectedEleveView1 = null;
+    }
+
+    private void resetSelectionStyle(StackPane pane) {
+        Rectangle bg = (Rectangle) pane.getChildren().get(0);
+        if (tableViews.containsValue(pane)) {
+            bg.setStroke(Color.web("#654321"));
+        } else {
+            bg.setStroke(Color.web("#388E3C"));
+        }
+        bg.setStrokeWidth(2);
+    }
+
+    private void assignEleveToTable(long eleveId, int tableIndex) {
+        new Thread(() -> {
+            try {
+                apiService.assignEleveToTable(classRoomPlan.getClassRoomId(), eleveId, tableIndex);
+                Platform.runLater(() -> {
+                    showStatus("Élève déplacé avec succès", false);
+                    refreshClassRoom();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> showError("Erreur lors du déplacement de l'élève: " + e.getMessage()));
+            }
+        }).start();
     }
 
     private void updateTablePosition(int tableIndex, int x, int y) {
@@ -300,7 +387,11 @@ public class ClassRoomPlanView extends BorderPane {
                     }
                 });
             } catch (Exception e) {
-                Platform.runLater(() -> showError("Erreur lors de la mise à jour de la position: " + e.getMessage()));
+                Platform.runLater(() -> {
+                    showError("Erreur lors de la mise à jour de la position: " + e.getMessage());
+                    // Rafraîchir pour restaurer la position originale
+                    refreshClassRoom();
+                });
             }
         }).start();
     }
@@ -338,6 +429,12 @@ public class ClassRoomPlanView extends BorderPane {
 
                     if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
                         showError("Position invalide");
+                        return;
+                    }
+
+                    // Vérifier si une table existe déjà à cette position
+                    if (isPositionOccupied(x, y, -1)) {
+                        showError("Une table existe déjà à cette position (X:" + x + ", Y:" + y + ")");
                         return;
                     }
 
@@ -398,5 +495,31 @@ public class ClassRoomPlanView extends BorderPane {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    /**
+     * Vérifie si une position est déjà occupée par une autre table
+     * @param x Coordonnée X
+     * @param y Coordonnée Y
+     * @param excludedIndex Index de la table à exclure de la vérification (-1 pour aucune exclusion)
+     * @return true si la position est occupée par une autre table
+     */
+    private boolean isPositionOccupied(int x, int y, int excludedIndex) {
+        if (classRoomPlan == null || classRoomPlan.getTables() == null) {
+            return false;
+        }
+
+        for (int i = 0; i < classRoomPlan.getTables().size(); i++) {
+            if (i == excludedIndex) {
+                continue;
+            }
+
+            TablePlanDTO table = classRoomPlan.getTables().get(i);
+            if (table.getX() == x && table.getY() == y) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

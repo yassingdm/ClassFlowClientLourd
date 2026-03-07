@@ -68,7 +68,12 @@ public class ClassRoomContainerView extends BorderPane {
         GroupManagementView groupsView = new GroupManagementView(classRoom, apiService);
         groupsTab.setContent(groupsView);
 
-        tabPane.getTabs().addAll(studentsTab, rouletteTab, groupsTab);
+        // Tab 4: Plan de classe
+        Tab planTab = new Tab("🪑 Plan de classe");
+        ClassRoomPlanView planView = new ClassRoomPlanView(apiService, classRoom.getId());
+        planTab.setContent(planView);
+
+        tabPane.getTabs().addAll(studentsTab, rouletteTab, groupsTab, planTab);
 
         setTop(header);
         setCenter(tabPane);
