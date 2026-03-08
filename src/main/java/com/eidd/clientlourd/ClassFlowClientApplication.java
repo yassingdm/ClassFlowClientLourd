@@ -45,6 +45,14 @@ public class ClassFlowClientApplication extends Application {
     }
 
     private void showMainView() {
+        // Préserver l'état du fullscreen
+        boolean wasFullscreen = primaryStage.isFullScreen();
+        
+        // Sortir du fullscreen temporairement avant le changement de scène
+        if (wasFullscreen) {
+            primaryStage.setFullScreen(false);
+        }
+        
         MainView mainView = new MainView(apiService);
         mainView.setOnClassRoomSelected(this::showClassRoomDetail);
         mainScene = new Scene(mainView, 800, 600);
@@ -52,9 +60,22 @@ public class ClassFlowClientApplication extends Application {
         primaryStage.setScene(mainScene);
         primaryStage.setWidth(800);
         primaryStage.setHeight(600);
+        
+        // Rétablir le fullscreen avec un délai pour éviter les conflits de timing
+        if (wasFullscreen) {
+            javafx.application.Platform.runLater(() -> primaryStage.setFullScreen(true));
+        }
     }
 
     private void showClassRoomDetail(ClassRoomDTO classRoom) {
+        // Préserver l'état du fullscreen
+        boolean wasFullscreen = primaryStage.isFullScreen();
+        
+        // Sortir du fullscreen temporairement avant le changement de scène
+        if (wasFullscreen) {
+            primaryStage.setFullScreen(false);
+        }
+        
         ClassRoomContainerView containerView = new ClassRoomContainerView(apiService, classRoom);
         containerView.setOnBack(this::showMainView);
         Scene detailScene = new Scene(containerView, 1200, 700);
@@ -62,6 +83,11 @@ public class ClassFlowClientApplication extends Application {
         primaryStage.setScene(detailScene);
         primaryStage.setWidth(1200);
         primaryStage.setHeight(700);
+        
+        // Rétablir le fullscreen avec un délai pour éviter les conflits de timing
+        if (wasFullscreen) {
+            javafx.application.Platform.runLater(() -> primaryStage.setFullScreen(true));
+        }
     }
 
     /**

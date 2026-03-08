@@ -53,34 +53,38 @@ public class GroupManagementView extends BorderPane {
     }
 
     private void setupUI() {
-        // Header
+        // Header moderne
         VBox header = new VBox(10);
-        header.setPadding(new Insets(20));
-        header.setStyle("-fx-background-color: #2196F3;");
+        header.setPadding(new Insets(25, 20, 25, 20));
+        header.setStyle("-fx-background-color: linear-gradient(to right, #9b59b6, #8e44ad); " +
+                       "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);");
         header.setAlignment(Pos.CENTER);
 
-        Label titleLabel = new Label("Gestion des groupes");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        Label titleLabel = new Label("👥 Gestion des Groupes");
+        titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
         titleLabel.setStyle("-fx-text-fill: white;");
 
         Label subtitleLabel = new Label(classRoom.getNom());
-        subtitleLabel.setFont(Font.font("Arial", 16));
-        subtitleLabel.setStyle("-fx-text-fill: white;");
+        subtitleLabel.setFont(Font.font("Segoe UI", 14));
+        subtitleLabel.setStyle("-fx-text-fill: #f0f0f0;");
 
         header.getChildren().addAll(titleLabel, subtitleLabel);
 
-        // Toolbar
+        // Toolbar moderne
         HBox toolbar = new HBox(10);
-        toolbar.setPadding(new Insets(10));
-        toolbar.setStyle("-fx-background-color: #f5f5f5;");
+        toolbar.setPadding(new Insets(15, 20, 15, 20));
+        toolbar.setStyle("-fx-background-color: #ecf0f1;");
 
-        Button createRandomButton = new Button("➕ Groupes aléatoires");
+        Button createRandomButton = new Button("🎲 Groupes Aléatoires");
+        styleButton(createRandomButton, "#27ae60", "#2ecc71");
         createRandomButton.setOnAction(e -> createRandomGroups());
 
-        Button createManualButton = new Button("➕ Nouveau groupe");
+        Button createManualButton = new Button("➕ Nouveau Groupe");
+        styleButton(createManualButton, "#3498db", "#5dade2");
         createManualButton.setOnAction(e -> createManualGroup());
 
         Button refreshButton = new Button("🔄 Rafraîchir");
+        styleButton(refreshButton, "#95a5a6", "#7f8c8d");
         refreshButton.setOnAction(e -> loadGroupes());
 
         toolbar.getChildren().addAll(createRandomButton, createManualButton, refreshButton);
@@ -92,19 +96,20 @@ public class GroupManagementView extends BorderPane {
         // Left: Groups display
         ScrollPane groupsScroll = new ScrollPane(groupsContainer);
         groupsScroll.setFitToWidth(true);
-        groupsScroll.setStyle("-fx-background-color: white;");
+        groupsScroll.setStyle("-fx-background-color: #f8f9fa;");
         groupsContainer.setPadding(new Insets(20));
 
         // Right: Available students
         VBox rightPanel = new VBox(10);
         rightPanel.setPadding(new Insets(20));
-        rightPanel.setStyle("-fx-background-color: #fafafa;");
+        rightPanel.setStyle("-fx-background-color: #f0f0f0;");
 
-        Label availableLabel = new Label("Élèves disponibles");
-        availableLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        Label availableLabel = new Label("👤 Élèves Disponibles");
+        availableLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        availableLabel.setStyle("-fx-text-fill: #2c3e50;");
 
         availableStudentsList.setCellFactory(lv -> createDraggableStudentCell());
-        availableStudentsList.setStyle("-fx-background-color: white;");
+        availableStudentsList.setStyle("-fx-background-color: white; -fx-border-color: #ecf0f1;");
 
         rightPanel.getChildren().addAll(availableLabel, availableStudentsList);
         VBox.setVgrow(availableStudentsList, Priority.ALWAYS);
@@ -112,12 +117,30 @@ public class GroupManagementView extends BorderPane {
         mainContent.getItems().addAll(groupsScroll, rightPanel);
 
         // Status bar
-        statusLabel.setPadding(new Insets(5, 10, 5, 10));
-        statusLabel.setStyle("-fx-background-color: #f5f5f5; -fx-text-fill: #666;");
+        statusLabel.setPadding(new Insets(10, 15, 10, 15));
+        statusLabel.setStyle("-fx-background-color: #ecf0f1; -fx-text-fill: #2c3e50;");
 
         setTop(new VBox(header, toolbar));
         setCenter(mainContent);
         setBottom(statusLabel);
+    }
+
+    private void styleButton(Button button, String normalColor, String hoverColor) {
+        button.setStyle(
+            "-fx-background-color: " + normalColor + "; -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-padding: 10 20; -fx-font-size: 12; " +
+            "-fx-background-radius: 5; -fx-cursor: hand;"
+        );
+        button.setOnMouseEntered(e -> button.setStyle(
+            "-fx-background-color: " + hoverColor + "; -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-padding: 10 20; -fx-font-size: 12; " +
+            "-fx-background-radius: 5; -fx-cursor: hand;"
+        ));
+        button.setOnMouseExited(e -> button.setStyle(
+            "-fx-background-color: " + normalColor + "; -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-padding: 10 20; -fx-font-size: 12; " +
+            "-fx-background-radius: 5; -fx-cursor: hand;"
+        ));
     }
 
     private ListCell<EleveDTO> createDraggableStudentCell() {
@@ -167,15 +190,6 @@ public class GroupManagementView extends BorderPane {
     private void updateUI() {
         groupsContainer.getChildren().clear();
 
-        // Élèves déjà dans des groupes
-        Set<Long> studentsInGroups = new HashSet<>();
-        for (GroupeDTO groupe : groupes) {
-            if (groupe.getEleves() != null) {
-                studentsInGroups.addAll(groupe.getEleves().stream()
-                    .map(EleveDTO::getId).collect(Collectors.toSet()));
-            }
-        }
-
         // Afficher les groupes
         for (int i = 0; i < groupes.size(); i++) {
             GroupeDTO groupe = groupes.get(i);
@@ -190,14 +204,11 @@ public class GroupManagementView extends BorderPane {
             groupsContainer.getChildren().add(emptyLabel);
         }
 
-        // Mettre à jour la liste des élèves disponibles
+        // Mettre à jour la liste des élèves disponibles - TOUS les élèves sont disponibles
+        // (un élève peut être dans plusieurs groupes)
         availableStudentsList.getItems().clear();
         if (classRoom.getEleves() != null) {
-            for (EleveDTO eleve : classRoom.getEleves()) {
-                if (!studentsInGroups.contains(eleve.getId())) {
-                    availableStudentsList.getItems().add(eleve);
-                }
-            }
+            availableStudentsList.getItems().addAll(classRoom.getEleves());
         }
     }
 

@@ -6,6 +6,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -34,36 +35,50 @@ public class ClassRoomDetailView extends BorderPane {
     }
 
     private void setupUI() {
+        // Header moderne
         VBox header = new VBox(10);
-        header.setPadding(new Insets(20));
-        header.setStyle("-fx-background-color: #4CAF50;");
+        header.setPadding(new Insets(25, 20, 25, 20));
+        header.setStyle("-fx-background-color: linear-gradient(to right, #16a085, #1abc9c); " +
+                       "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);");
 
         HBox headerTop = new HBox(10);
+        headerTop.setAlignment(Pos.CENTER_LEFT);
         Button backButton = new Button("← Retour");
+        backButton.setStyle("-fx-background-color: transparent; -fx-text-fill: white; " +
+                           "-fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 12;");
+        backButton.setOnMouseEntered(e -> backButton.setStyle(
+            "-fx-background-color: rgba(255,255,255,0.2); -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 12; -fx-padding: 5 10;"));
+        backButton.setOnMouseExited(e -> backButton.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 12;"));
         backButton.setOnAction(e -> {
             if (onBack != null) onBack.run();
         });
 
         Label titleLabel = new Label(classRoom.getNom());
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
         titleLabel.setStyle("-fx-text-fill: white;");
 
         headerTop.getChildren().addAll(backButton, titleLabel);
 
         statusLabel = new Label();
-        statusLabel.setStyle("-fx-text-fill: white;");
+        statusLabel.setStyle("-fx-text-fill: #ecf0f1; -fx-font-size: 12;");
 
         header.getChildren().addAll(headerTop, statusLabel);
 
+        // Main content
         VBox centerBox = new VBox(10);
-        centerBox.setPadding(new Insets(10));
+        centerBox.setPadding(new Insets(15));
 
-        Label eleveTitle = new Label("Élèves");
-        eleveTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        Label eleveTitle = new Label("👤 Élèves");
+        eleveTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        eleveTitle.setStyle("-fx-text-fill: #2c3e50;");
 
         eleves = FXCollections.observableArrayList();
         eleveListView = new ListView<>(eleves);
         eleveListView.setCellFactory(param -> new EleveListCell());
+        eleveListView.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #ecf0f1;");
         eleveListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 loadRemarquesForEleve(newVal);
@@ -72,13 +87,18 @@ public class ClassRoomDetailView extends BorderPane {
 
         // Boutons gestion élèves
         HBox eleveButtons = new HBox(10);
-        Button addEleveButton = new Button("Ajouter élève");
+        eleveButtons.setPadding(new Insets(10, 0, 0, 0));
+
+        Button addEleveButton = new Button("➕ Ajouter");
+        styleButton(addEleveButton, "#27ae60", "#2ecc71");
         addEleveButton.setOnAction(e -> addEleve());
 
-        Button editEleveButton = new Button("Modifier");
+        Button editEleveButton = new Button("✏️ Modifier");
+        styleButton(editEleveButton, "#3498db", "#5dade2");
         editEleveButton.setOnAction(e -> editEleve());
 
-        Button deleteEleveButton = new Button("Supprimer");
+        Button deleteEleveButton = new Button("🗑️ Supprimer");
+        styleButton(deleteEleveButton, "#e74c3c", "#ec7063");
         deleteEleveButton.setOnAction(e -> deleteEleve());
 
         eleveButtons.getChildren().addAll(addEleveButton, editEleveButton, deleteEleveButton);
@@ -87,14 +107,17 @@ public class ClassRoomDetailView extends BorderPane {
 
         // Droite: remarques
         VBox rightBox = new VBox(10);
-        rightBox.setPadding(new Insets(10));
-        rightBox.setPrefWidth(300);
+        rightBox.setPadding(new Insets(15));
+        rightBox.setPrefWidth(320);
+        rightBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #ecf0f1; -fx-border-width: 0 0 0 1;");
 
-        Label remarqueTitle = new Label("Remarques de l'élève");
-        remarqueTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        Label remarqueTitle = new Label("📝 Remarques");
+        remarqueTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        remarqueTitle.setStyle("-fx-text-fill: #2c3e50;");
 
         remarquesListView = new ListView<>();
         remarquesListView.setPrefHeight(300);
+        remarquesListView.setStyle("-fx-background-color: white; -fx-border-color: #ecf0f1;");
         remarquesListView.setCellFactory(param -> new ListCell<RemarqueDTO>() {
             @Override
             protected void updateItem(RemarqueDTO item, boolean empty) {
@@ -103,15 +126,18 @@ public class ClassRoomDetailView extends BorderPane {
                     setText(null);
                 } else {
                     setText("• " + item.getIntitule());
+                    setStyle("-fx-padding: 8; -fx-font-size: 12;");
                 }
             }
         });
 
         HBox remarqueButtonBox = new HBox(10);
-        Button addRemarqueButton = new Button("Ajouter une remarque");
+        Button addRemarqueButton = new Button("➕ Ajouter");
+        styleButton(addRemarqueButton, "#f39c12", "#f1c40f");
         addRemarqueButton.setOnAction(e -> addRemarque());
         
-        Button deleteRemarqueButton = new Button("Supprimer");
+        Button deleteRemarqueButton = new Button("🗑️ Supprimer");
+        styleButton(deleteRemarqueButton, "#e74c3c", "#ec7063");
         deleteRemarqueButton.setOnAction(e -> deleteRemarque());
 
         remarqueButtonBox.getChildren().addAll(addRemarqueButton, deleteRemarqueButton);
@@ -121,6 +147,24 @@ public class ClassRoomDetailView extends BorderPane {
         setTop(header);
         setCenter(centerBox);
         setRight(rightBox);
+    }
+
+    private void styleButton(Button button, String normalColor, String hoverColor) {
+        button.setStyle(
+            "-fx-background-color: " + normalColor + "; -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-padding: 8 15; -fx-font-size: 12; " +
+            "-fx-background-radius: 5; -fx-cursor: hand;"
+        );
+        button.setOnMouseEntered(e -> button.setStyle(
+            "-fx-background-color: " + hoverColor + "; -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-padding: 8 15; -fx-font-size: 12; " +
+            "-fx-background-radius: 5; -fx-cursor: hand;"
+        ));
+        button.setOnMouseExited(e -> button.setStyle(
+            "-fx-background-color: " + normalColor + "; -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-padding: 8 15; -fx-font-size: 12; " +
+            "-fx-background-radius: 5; -fx-cursor: hand;"
+        ));
     }
 
     private void refreshClassRoom() {
@@ -402,8 +446,10 @@ public class ClassRoomDetailView extends BorderPane {
             if (empty || item == null) {
                 setText(null);
             } else {
-                setText(item.getPrenom() + " " + item.getNom());
-                setStyle("-fx-font-size: 14px; -fx-padding: 8px;");
+                setText("👤 " + item.getPrenom() + " " + item.getNom());
+                setStyle("-fx-font-size: 13px; -fx-padding: 12px; " +
+                        "-fx-border-color: #ecf0f1; -fx-border-width: 0 0 1 0;");
+                setTextFill(javafx.scene.paint.Color.web("#2c3e50"));
             }
         }
     }
